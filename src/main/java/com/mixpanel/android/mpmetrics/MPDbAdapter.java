@@ -190,52 +190,52 @@ import com.mixpanel.android.util.MPLog;
         }
 
         private void migrateTableFrom4To5(SQLiteDatabase db) {
-            db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA
-                    + " INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA
-                    + " INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_TOKEN
-                    + " STRING NOT NULL DEFAULT ''");
-            db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_TOKEN
-                    + " STRING NOT NULL DEFAULT ''");
+            // db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA
+            //         + " INTEGER DEFAULT 0");
+            // db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA
+            //         + " INTEGER DEFAULT 0");
+            // db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_TOKEN
+            //         + " STRING NOT NULL DEFAULT ''");
+            // db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_TOKEN
+            //         + " STRING NOT NULL DEFAULT ''");
 
-            Cursor eventsCursor = db.rawQuery("SELECT * FROM " + Table.EVENTS.getName(), null);
-            while (eventsCursor.moveToNext()) {
-                int rowId = 0;
-                try {
-                    final int dataColumnIndex = eventsCursor.getColumnIndex(KEY_DATA) >= 0
-                            ? eventsCursor.getColumnIndex(KEY_DATA)
-                            : DATA_COLUMN_INDEX;
-                    final JSONObject j = new JSONObject(eventsCursor.getString(dataColumnIndex));
-                    String token = j.getJSONObject("properties").getString("token");
-                    final int idColumnIndex = eventsCursor.getColumnIndex("_id") >= 0
-                            ? eventsCursor.getColumnIndex("_id")
-                            : ID_COLUMN_INDEX;
-                    rowId = eventsCursor.getInt(idColumnIndex);
-                    db.execSQL(this.convert(token, rowId));
-                } catch (final JSONException e) {
-                    db.delete(Table.EVENTS.getName(), "_id = " + rowId, null);
-                }
-            }
+            // Cursor eventsCursor = db.rawQuery("SELECT * FROM " + Table.EVENTS.getName(), null);
+            // while (eventsCursor.moveToNext()) {
+            //     int rowId = 0;
+            //     try {
+            //         final int dataColumnIndex = eventsCursor.getColumnIndex(KEY_DATA) >= 0
+            //                 ? eventsCursor.getColumnIndex(KEY_DATA)
+            //                 : DATA_COLUMN_INDEX;
+            //         final JSONObject j = new JSONObject(eventsCursor.getString(dataColumnIndex));
+            //         String token = j.getJSONObject("properties").getString("token");
+            //         final int idColumnIndex = eventsCursor.getColumnIndex("_id") >= 0
+            //                 ? eventsCursor.getColumnIndex("_id")
+            //                 : ID_COLUMN_INDEX;
+            //         rowId = eventsCursor.getInt(idColumnIndex);
+            //         db.execSQL(this.convert(token, rowId));
+            //     } catch (final JSONException e) {
+            //         db.delete(Table.EVENTS.getName(), "_id = " + rowId, null);
+            //     }
+            // }
 
-            Cursor peopleCursor = db.rawQuery("SELECT * FROM " + Table.PEOPLE.getName(), null);
-            while (peopleCursor.moveToNext()) {
-                int rowId = 0;
-                try {
-                    final int dataColumnIndex = peopleCursor.getColumnIndex(KEY_DATA) >= 0
-                            ? peopleCursor.getColumnIndex(KEY_DATA)
-                            : DATA_COLUMN_INDEX;
-                    final JSONObject j = new JSONObject(peopleCursor.getString(dataColumnIndex));
-                    String token = j.getString("$token");
-                    final int idColumnIndex = peopleCursor.getColumnIndex("_id") >= 0
-                            ? peopleCursor.getColumnIndex("_id")
-                            : ID_COLUMN_INDEX;
-                    rowId = peopleCursor.getInt(idColumnIndex);
-                    db.execSQL(this.convert(token, rowId));
-                } catch (final JSONException e) {
-                    db.delete(Table.PEOPLE.getName(), "_id = " + rowId, null);
-                }
-            }
+            // Cursor peopleCursor = db.rawQuery("SELECT * FROM " + Table.PEOPLE.getName(), null);
+            // while (peopleCursor.moveToNext()) {
+            //     int rowId = 0;
+            //     try {
+            //         final int dataColumnIndex = peopleCursor.getColumnIndex(KEY_DATA) >= 0
+            //                 ? peopleCursor.getColumnIndex(KEY_DATA)
+            //                 : DATA_COLUMN_INDEX;
+            //         final JSONObject j = new JSONObject(peopleCursor.getString(dataColumnIndex));
+            //         String token = j.getString("$token");
+            //         final int idColumnIndex = peopleCursor.getColumnIndex("_id") >= 0
+            //                 ? peopleCursor.getColumnIndex("_id")
+            //                 : ID_COLUMN_INDEX;
+            //         rowId = peopleCursor.getInt(idColumnIndex);
+            //         db.execSQL(this.convert(token, rowId));
+            //     } catch (final JSONException e) {
+            //         db.delete(Table.PEOPLE.getName(), "_id = " + rowId, null);
+            //     }
+            // }
         }
 
         private void migrateTableFrom5To6(SQLiteDatabase db) {
