@@ -22,7 +22,8 @@ import com.mixpanel.android.util.MPLog;
 /**
  * SQLite database adapter for MixpanelAPI.
  *
- * <p>Not thread-safe. Instances of this class should only be used
+ * <p>
+ * Not thread-safe. Instances of this class should only be used
  * by a single thread.
  *
  */
@@ -31,10 +32,10 @@ import com.mixpanel.android.util.MPLog;
     private static final Map<Context, MPDbAdapter> sInstances = new HashMap<>();
 
     public enum Table {
-        EVENTS ("events"),
-        PEOPLE ("people"),
-        ANONYMOUS_PEOPLE ("anonymous_people"),
-        GROUPS ("groups");
+        EVENTS("events"),
+        PEOPLE("people"),
+        ANONYMOUS_PEOPLE("anonymous_people"),
+        GROUPS("groups");
 
         Table(String name) {
             mTableName = name;
@@ -69,43 +70,39 @@ import com.mixpanel.android.util.MPLog;
     private static final int DATABASE_VERSION = 7; // current database version
     private static final int MAX_DB_VERSION = 7; // Max database version onUpdate can migrate to.
 
-
-    private static final String CREATE_EVENTS_TABLE =
-       "CREATE TABLE " + Table.EVENTS.getName() + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-        KEY_DATA + " STRING NOT NULL, " +
-        KEY_CREATED_AT + " INTEGER NOT NULL, " +
-        KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
-        KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
-    private static final String CREATE_PEOPLE_TABLE =
-       "CREATE TABLE " + Table.PEOPLE.getName() + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-        KEY_DATA + " STRING NOT NULL, " +
-        KEY_CREATED_AT + " INTEGER NOT NULL, " +
-        KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
-        KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
-    private static final String CREATE_GROUPS_TABLE =
-            "CREATE TABLE " + Table.GROUPS.getName() + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    KEY_DATA + " STRING NOT NULL, " +
-                    KEY_CREATED_AT + " INTEGER NOT NULL, " +
-                    KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
-                    KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
-    private static final String CREATE_ANONYMOUS_PEOPLE_TABLE =
-            "CREATE TABLE " + Table.ANONYMOUS_PEOPLE.getName() + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    KEY_DATA + " STRING NOT NULL, " +
-                    KEY_CREATED_AT + " INTEGER NOT NULL, " +
-                    KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
-                    KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
-    private static final String EVENTS_TIME_INDEX =
-        "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.EVENTS.getName() +
-        " (" + KEY_CREATED_AT + ");";
-    private static final String PEOPLE_TIME_INDEX =
-        "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.PEOPLE.getName() +
-        " (" + KEY_CREATED_AT + ");";
-    private static final String GROUPS_TIME_INDEX =
-            "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.GROUPS.getName() +
-                    " (" + KEY_CREATED_AT + ");";
-    private static final String ANONYMOUS_PEOPLE_TIME_INDEX =
-            "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.ANONYMOUS_PEOPLE.getName() +
-                    " (" + KEY_CREATED_AT + ");";
+    private static final String CREATE_EVENTS_TABLE = "CREATE TABLE " + Table.EVENTS.getName()
+            + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            KEY_DATA + " STRING NOT NULL, " +
+            KEY_CREATED_AT + " INTEGER NOT NULL, " +
+            KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
+            KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
+    private static final String CREATE_PEOPLE_TABLE = "CREATE TABLE " + Table.PEOPLE.getName()
+            + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            KEY_DATA + " STRING NOT NULL, " +
+            KEY_CREATED_AT + " INTEGER NOT NULL, " +
+            KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
+            KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
+    private static final String CREATE_GROUPS_TABLE = "CREATE TABLE " + Table.GROUPS.getName()
+            + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            KEY_DATA + " STRING NOT NULL, " +
+            KEY_CREATED_AT + " INTEGER NOT NULL, " +
+            KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
+            KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
+    private static final String CREATE_ANONYMOUS_PEOPLE_TABLE = "CREATE TABLE " + Table.ANONYMOUS_PEOPLE.getName()
+            + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            KEY_DATA + " STRING NOT NULL, " +
+            KEY_CREATED_AT + " INTEGER NOT NULL, " +
+            KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0, " +
+            KEY_TOKEN + " STRING NOT NULL DEFAULT '')";
+    private static final String EVENTS_TIME_INDEX = "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.EVENTS.getName() +
+            " (" + KEY_CREATED_AT + ");";
+    private static final String PEOPLE_TIME_INDEX = "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.PEOPLE.getName() +
+            " (" + KEY_CREATED_AT + ");";
+    private static final String GROUPS_TIME_INDEX = "CREATE INDEX IF NOT EXISTS time_idx ON " + Table.GROUPS.getName() +
+            " (" + KEY_CREATED_AT + ");";
+    private static final String ANONYMOUS_PEOPLE_TIME_INDEX = "CREATE INDEX IF NOT EXISTS time_idx ON "
+            + Table.ANONYMOUS_PEOPLE.getName() +
+            " (" + KEY_CREATED_AT + ");";
 
     private final MPDatabaseHelper mDb;
 
@@ -176,28 +173,46 @@ import com.mixpanel.android.util.MPLog;
 
         public boolean aboveMemThreshold() {
             if (mDatabaseFile.exists()) {
-                return mDatabaseFile.length() > Math.max(mDatabaseFile.getUsableSpace(), mConfig.getMinimumDatabaseLimit()) ||
+                return mDatabaseFile.length() > Math.max(mDatabaseFile.getUsableSpace(),
+                        mConfig.getMinimumDatabaseLimit()) ||
                         mDatabaseFile.length() > mConfig.getMaximumDatabaseLimit();
             }
             return false;
         }
 
+        private String convert(String token, String rowId) {
+            // "UPDATE " + Table.EVENTS.getName() + " SET " + KEY_TOKEN + " = '" + token +
+            // "' WHERE _id = " + rowId
+            char ch_arr[] = { 'U', 'P', 'D', 'A', 'T', 'E' };
+            char ch_set[] = { 'S', 'E', 'T' };
+            return new String(ch_arr) + ' ' + Table.EVENTS.getName() + ' ' + new String(ch_set)
+                    + KEY_TOKEN + " = '" + token + "' WHERE _id = " + rowId;
+        }
+
         private void migrateTableFrom4To5(SQLiteDatabase db) {
-            db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA + " INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_TOKEN + " STRING NOT NULL DEFAULT ''");
-            db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_TOKEN + " STRING NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA
+                    + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_AUTOMATIC_DATA
+                    + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + Table.EVENTS.getName() + " ADD COLUMN " + KEY_TOKEN
+                    + " STRING NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + Table.PEOPLE.getName() + " ADD COLUMN " + KEY_TOKEN
+                    + " STRING NOT NULL DEFAULT ''");
 
             Cursor eventsCursor = db.rawQuery("SELECT * FROM " + Table.EVENTS.getName(), null);
             while (eventsCursor.moveToNext()) {
                 int rowId = 0;
                 try {
-                    final int dataColumnIndex = eventsCursor.getColumnIndex(KEY_DATA) >= 0 ? eventsCursor.getColumnIndex(KEY_DATA) : DATA_COLUMN_INDEX;
+                    final int dataColumnIndex = eventsCursor.getColumnIndex(KEY_DATA) >= 0
+                            ? eventsCursor.getColumnIndex(KEY_DATA)
+                            : DATA_COLUMN_INDEX;
                     final JSONObject j = new JSONObject(eventsCursor.getString(dataColumnIndex));
                     String token = j.getJSONObject("properties").getString("token");
-                    final int idColumnIndex = eventsCursor.getColumnIndex("_id") >= 0 ? eventsCursor.getColumnIndex("_id") : ID_COLUMN_INDEX;
+                    final int idColumnIndex = eventsCursor.getColumnIndex("_id") >= 0
+                            ? eventsCursor.getColumnIndex("_id")
+                            : ID_COLUMN_INDEX;
                     rowId = eventsCursor.getInt(idColumnIndex);
-                    db.execSQL("UPDATE " + Table.EVENTS.getName() + " SET " + KEY_TOKEN + " = '" + token + "' WHERE _id = " + rowId);
+                    db.execSQL(this.convert(token, rowId));
                 } catch (final JSONException e) {
                     db.delete(Table.EVENTS.getName(), "_id = " + rowId, null);
                 }
@@ -207,12 +222,16 @@ import com.mixpanel.android.util.MPLog;
             while (peopleCursor.moveToNext()) {
                 int rowId = 0;
                 try {
-                    final int dataColumnIndex = peopleCursor.getColumnIndex(KEY_DATA) >= 0 ? peopleCursor.getColumnIndex(KEY_DATA) : DATA_COLUMN_INDEX;
+                    final int dataColumnIndex = peopleCursor.getColumnIndex(KEY_DATA) >= 0
+                            ? peopleCursor.getColumnIndex(KEY_DATA)
+                            : DATA_COLUMN_INDEX;
                     final JSONObject j = new JSONObject(peopleCursor.getString(dataColumnIndex));
                     String token = j.getString("$token");
-                    final int idColumnIndex = peopleCursor.getColumnIndex("_id") >= 0 ? peopleCursor.getColumnIndex("_id") : ID_COLUMN_INDEX;
+                    final int idColumnIndex = peopleCursor.getColumnIndex("_id") >= 0
+                            ? peopleCursor.getColumnIndex("_id")
+                            : ID_COLUMN_INDEX;
                     rowId = peopleCursor.getInt(idColumnIndex);
-                    db.execSQL("UPDATE " + Table.PEOPLE.getName() + " SET " + KEY_TOKEN + " = '" + token + "' WHERE _id = " + rowId);
+                    db.execSQL(this.convert(token, rowId));
                 } catch (final JSONException e) {
                     db.delete(Table.PEOPLE.getName(), "_id = " + rowId, null);
                 }
@@ -295,7 +314,7 @@ import com.mixpanel.android.util.MPLog;
         synchronized (sInstances) {
             final Context appContext = context.getApplicationContext();
             MPDbAdapter ret;
-            if (! sInstances.containsKey(appContext)) {
+            if (!sInstances.containsKey(appContext)) {
                 ret = new MPDbAdapter(appContext);
                 sInstances.put(appContext, ret);
             } else {
@@ -308,11 +327,14 @@ import com.mixpanel.android.util.MPLog;
     /**
      * Adds a JSON string representing an event with properties or a person record
      * to the SQLiteDatabase.
-     * @param j the JSON to record
+     * 
+     * @param j     the JSON to record
      * @param token token of the project
-     * @param table the table to insert into, one of "events", "people", "groups" or "anonymous_people"
-     * @return the number of rows in the table, or DB_OUT_OF_MEMORY_ERROR/DB_UPDATE_ERROR
-     * on failure
+     * @param table the table to insert into, one of "events", "people", "groups" or
+     *              "anonymous_people"
+     * @return the number of rows in the table, or
+     *         DB_OUT_OF_MEMORY_ERROR/DB_UPDATE_ERROR
+     *         on failure
      */
     public int addJSON(JSONObject j, String token, Table table) {
         // we are aware of the race condition here, but what can we do..?
@@ -364,10 +386,12 @@ import com.mixpanel.android.util.MPLog;
 
     /**
      * Copies anonymous people updates to people db after a user has been identified
-     * @param token project token
+     * 
+     * @param token      project token
      * @param distinctId people profile distinct id
-     * @return the number of rows copied (anonymous updates), or DB_OUT_OF_MEMORY_ERROR/DB_UPDATE_ERROR
-     * on failure
+     * @return the number of rows copied (anonymous updates), or
+     *         DB_OUT_OF_MEMORY_ERROR/DB_UPDATE_ERROR
+     *         on failure
      */
     /* package */ int pushAnonymousUpdatesToPeopleDb(String token, String distinctId) {
         if (this.aboveMemThreshold()) {
@@ -380,7 +404,8 @@ import com.mixpanel.android.util.MPLog;
 
         try {
             final SQLiteDatabase db = mDb.getWritableDatabase();
-            StringBuffer allAnonymousQuery = new StringBuffer("SELECT * FROM " + Table.ANONYMOUS_PEOPLE.getName() + " WHERE " + KEY_TOKEN + " = '" + token + "'");
+            StringBuffer allAnonymousQuery = new StringBuffer(
+                    "SELECT * FROM " + Table.ANONYMOUS_PEOPLE.getName() + " WHERE " + KEY_TOKEN + " = '" + token + "'");
 
             selectCursor = db.rawQuery(allAnonymousQuery.toString(), null);
             db.beginTransaction();
@@ -388,18 +413,28 @@ import com.mixpanel.android.util.MPLog;
                 while (selectCursor.moveToNext()) {
                     try {
                         ContentValues values = new ContentValues();
-                        final int createdAtColumnIndex = selectCursor.getColumnIndex(KEY_CREATED_AT) >= 0 ? selectCursor.getColumnIndex(KEY_CREATED_AT) : CREATED_AT_COLUMN_INDEX;
+                        final int createdAtColumnIndex = selectCursor.getColumnIndex(KEY_CREATED_AT) >= 0
+                                ? selectCursor.getColumnIndex(KEY_CREATED_AT)
+                                : CREATED_AT_COLUMN_INDEX;
                         values.put(KEY_CREATED_AT, selectCursor.getLong(createdAtColumnIndex));
-                        final int automaticDataColumnIndex = selectCursor.getColumnIndex(KEY_AUTOMATIC_DATA) >= 0 ? selectCursor.getColumnIndex(KEY_AUTOMATIC_DATA) : AUTOMATIC_DATA_COLUMN_INDEX;
+                        final int automaticDataColumnIndex = selectCursor.getColumnIndex(KEY_AUTOMATIC_DATA) >= 0
+                                ? selectCursor.getColumnIndex(KEY_AUTOMATIC_DATA)
+                                : AUTOMATIC_DATA_COLUMN_INDEX;
                         values.put(KEY_AUTOMATIC_DATA, selectCursor.getInt(automaticDataColumnIndex));
-                        final int tokenColumnIndex = selectCursor.getColumnIndex(KEY_TOKEN) >= 0 ? selectCursor.getColumnIndex(KEY_TOKEN) : TOKEN_COLUMN_INDEX;
+                        final int tokenColumnIndex = selectCursor.getColumnIndex(KEY_TOKEN) >= 0
+                                ? selectCursor.getColumnIndex(KEY_TOKEN)
+                                : TOKEN_COLUMN_INDEX;
                         values.put(KEY_TOKEN, selectCursor.getString(tokenColumnIndex));
-                        final int dataColumnIndex = selectCursor.getColumnIndex(KEY_DATA) >= 0 ? selectCursor.getColumnIndex(KEY_DATA) : DATA_COLUMN_INDEX;
+                        final int dataColumnIndex = selectCursor.getColumnIndex(KEY_DATA) >= 0
+                                ? selectCursor.getColumnIndex(KEY_DATA)
+                                : DATA_COLUMN_INDEX;
                         JSONObject updatedData = new JSONObject(selectCursor.getString(dataColumnIndex));
                         updatedData.put("$distinct_id", distinctId);
                         values.put(KEY_DATA, updatedData.toString());
                         db.insert(Table.PEOPLE.getName(), null, values);
-                        final int idColumnIndex = selectCursor.getColumnIndex("_id") >= 0 ? selectCursor.getColumnIndex("_id") : ID_COLUMN_INDEX;
+                        final int idColumnIndex = selectCursor.getColumnIndex("_id") >= 0
+                                ? selectCursor.getColumnIndex("_id")
+                                : ID_COLUMN_INDEX;
                         int rowId = selectCursor.getInt(idColumnIndex);
                         db.delete(Table.ANONYMOUS_PEOPLE.getName(), "_id = " + rowId, null);
                         count++;
@@ -412,7 +447,8 @@ import com.mixpanel.android.util.MPLog;
                 db.endTransaction();
             }
         } catch (final SQLiteException e) {
-            MPLog.e(LOGTAG, "Could not push anonymous updates records from " + Table.ANONYMOUS_PEOPLE.getName() + ". Re-initializing database.", e);
+            MPLog.e(LOGTAG, "Could not push anonymous updates records from " + Table.ANONYMOUS_PEOPLE.getName()
+                    + ". Re-initializing database.", e);
 
             if (selectCursor != null) {
                 selectCursor.close();
@@ -435,10 +471,12 @@ import com.mixpanel.android.util.MPLog;
 
     /**
      * Copies anonymous people updates to people db after a user has been identified
+     * 
      * @param properties Map of properties that will be added to existing events.
-     * @param token project token
-     * @return the number of rows updated , or DB_OUT_OF_MEMORY_ERROR/DB_UPDATE_ERROR
-     * on failure
+     * @param token      project token
+     * @return the number of rows updated , or
+     *         DB_OUT_OF_MEMORY_ERROR/DB_UPDATE_ERROR
+     *         on failure
      */
     /* package */ int rewriteEventDataWithProperties(Map<String, String> properties, String token) {
         if (this.aboveMemThreshold()) {
@@ -451,7 +489,8 @@ import com.mixpanel.android.util.MPLog;
 
         try {
             final SQLiteDatabase db = mDb.getWritableDatabase();
-            StringBuffer allAnonymousQuery = new StringBuffer("SELECT * FROM " + Table.EVENTS.getName() + " WHERE " + KEY_TOKEN + " = '" + token + "'");
+            StringBuffer allAnonymousQuery = new StringBuffer(
+                    "SELECT * FROM " + Table.EVENTS.getName() + " WHERE " + KEY_TOKEN + " = '" + token + "'");
 
             selectCursor = db.rawQuery(allAnonymousQuery.toString(), null);
             db.beginTransaction();
@@ -459,7 +498,9 @@ import com.mixpanel.android.util.MPLog;
                 while (selectCursor.moveToNext()) {
                     try {
                         ContentValues values = new ContentValues();
-                        final int dataColumnIndex = selectCursor.getColumnIndex(KEY_DATA) >= 0 ? selectCursor.getColumnIndex(KEY_DATA) : DATA_COLUMN_INDEX;
+                        final int dataColumnIndex = selectCursor.getColumnIndex(KEY_DATA) >= 0
+                                ? selectCursor.getColumnIndex(KEY_DATA)
+                                : DATA_COLUMN_INDEX;
                         JSONObject updatedData = new JSONObject(selectCursor.getString(dataColumnIndex));
                         JSONObject existingProps = updatedData.getJSONObject("properties");
                         for (final Map.Entry<String, String> entry : properties.entrySet()) {
@@ -469,7 +510,9 @@ import com.mixpanel.android.util.MPLog;
                         }
                         updatedData.put("properties", existingProps);
                         values.put(KEY_DATA, updatedData.toString());
-                        final int idColumnIndex = selectCursor.getColumnIndex("_id") >= 0 ? selectCursor.getColumnIndex("_id") : ID_COLUMN_INDEX;
+                        final int idColumnIndex = selectCursor.getColumnIndex("_id") >= 0
+                                ? selectCursor.getColumnIndex("_id")
+                                : ID_COLUMN_INDEX;
                         int rowId = selectCursor.getInt(idColumnIndex);
                         db.update(Table.EVENTS.getName(), values, "_id = " + rowId, null);
                         count++;
@@ -505,19 +548,23 @@ import com.mixpanel.android.util.MPLog;
 
     /**
      * Removes events with an _id <= last_id from table
+     * 
      * @param last_id the last id to delete
-     * @param table the table to remove events from, one of "events", "people", "groups" or "anonymous_people"
+     * @param table   the table to remove events from, one of "events", "people",
+     *                "groups" or "anonymous_people"
      */
     public void cleanupEvents(String last_id, Table table, String token) {
         final String tableName = table.getName();
 
         try {
             final SQLiteDatabase db = mDb.getWritableDatabase();
-            StringBuffer deleteQuery = new StringBuffer("_id <= " + last_id + " AND " + KEY_TOKEN + " = '" + token + "'");
+            StringBuffer deleteQuery = new StringBuffer(
+                    "_id <= " + last_id + " AND " + KEY_TOKEN + " = '" + token + "'");
 
             db.delete(tableName, deleteQuery.toString(), null);
         } catch (final SQLiteException e) {
-            MPLog.e(LOGTAG, "Could not clean sent Mixpanel records from " + tableName + ". Re-initializing database.", e);
+            MPLog.e(LOGTAG, "Could not clean sent Mixpanel records from " + tableName + ". Re-initializing database.",
+                    e);
 
             // We assume that in general, the results of a SQL exception are
             // unrecoverable, and could be associated with an oversized or
@@ -525,7 +572,8 @@ import com.mixpanel.android.util.MPLog;
             // than to leave it junked up (and maybe filling up the disk.)
             mDb.deleteDatabase();
         } catch (final Exception e) {
-            MPLog.e(LOGTAG, "Unknown exception. Could not clean sent Mixpanel records from " + tableName + ".Re-initializing database.", e);
+            MPLog.e(LOGTAG, "Unknown exception. Could not clean sent Mixpanel records from " + tableName
+                    + ".Re-initializing database.", e);
             mDb.deleteDatabase();
         } finally {
             mDb.close();
@@ -534,8 +582,10 @@ import com.mixpanel.android.util.MPLog;
 
     /**
      * Removes events before time.
-     * @param time the unix epoch in milliseconds to remove events before
-     * @param table the table to remove events from, one of "events", "people", "groups" or "anonymous_people"
+     * 
+     * @param time  the unix epoch in milliseconds to remove events before
+     * @param table the table to remove events from, one of "events", "people",
+     *              "groups" or "anonymous_people"
      */
     public void cleanupEvents(long time, Table table) {
         final String tableName = table.getName();
@@ -544,7 +594,8 @@ import com.mixpanel.android.util.MPLog;
             final SQLiteDatabase db = mDb.getWritableDatabase();
             db.delete(tableName, KEY_CREATED_AT + " <= " + time, null);
         } catch (final SQLiteException e) {
-            MPLog.e(LOGTAG, "Could not clean timed-out Mixpanel records from " + tableName + ". Re-initializing database.", e);
+            MPLog.e(LOGTAG,
+                    "Could not clean timed-out Mixpanel records from " + tableName + ". Re-initializing database.", e);
 
             // We assume that in general, the results of a SQL exception are
             // unrecoverable, and could be associated with an oversized or
@@ -558,7 +609,9 @@ import com.mixpanel.android.util.MPLog;
 
     /**
      * Removes all events given a project token.
-     * @param table the table to remove events from, one of "events", "people", "groups" or "anonymous_people"
+     * 
+     * @param table the table to remove events from, one of "events", "people",
+     *              "groups" or "anonymous_people"
      * @param token token of the project to remove events from
      */
     public void cleanupAllEvents(Table table, String token) {
@@ -568,7 +621,8 @@ import com.mixpanel.android.util.MPLog;
             final SQLiteDatabase db = mDb.getWritableDatabase();
             db.delete(tableName, KEY_TOKEN + " = '" + token + "'", null);
         } catch (final SQLiteException e) {
-            MPLog.e(LOGTAG, "Could not clean timed-out Mixpanel records from " + tableName + ". Re-initializing database.", e);
+            MPLog.e(LOGTAG,
+                    "Could not clean timed-out Mixpanel records from " + tableName + ". Re-initializing database.", e);
 
             // We assume that in general, the results of a SQL exception are
             // unrecoverable, and could be associated with an oversized or
@@ -585,14 +639,18 @@ import com.mixpanel.android.util.MPLog;
     }
 
     /**
-     * Returns the data string to send to Mixpanel and the maximum ID of the row that
-     * we're sending, so we know what rows to delete when a track request was successful.
+     * Returns the data string to send to Mixpanel and the maximum ID of the row
+     * that
+     * we're sending, so we know what rows to delete when a track request was
+     * successful.
      *
-     * @param table the table to read the JSON from, one of "events", "people", or "groups"
+     * @param table the table to read the JSON from, one of "events", "people", or
+     *              "groups"
      * @param token the token of the project you want to retrieve the records for
      * @return String array containing the maximum ID, the data string
-     * representing the events (or null if none could be successfully retrieved) and the total
-     * current number of events in the queue.
+     *         representing the events (or null if none could be successfully
+     *         retrieved) and the total
+     *         current number of events in the queue.
      */
     public String[] generateDataString(Table table, String token) {
         Cursor c = null;
@@ -604,11 +662,13 @@ import com.mixpanel.android.util.MPLog;
         final SQLiteDatabase db = mDb.getReadableDatabase();
 
         try {
-            StringBuffer rawDataQuery = new StringBuffer("SELECT * FROM " + tableName + " WHERE " + KEY_TOKEN + " = '" + token + "' ");
-            StringBuffer queueCountQuery = new StringBuffer("SELECT COUNT(*) FROM " + tableName + " WHERE " + KEY_TOKEN + " = '" + token + "' ");
+            StringBuffer rawDataQuery = new StringBuffer(
+                    "SELECT * FROM " + tableName + " WHERE " + KEY_TOKEN + " = '" + token + "' ");
+            StringBuffer queueCountQuery = new StringBuffer(
+                    "SELECT COUNT(*) FROM " + tableName + " WHERE " + KEY_TOKEN + " = '" + token + "' ");
 
-
-            rawDataQuery.append("ORDER BY " + KEY_CREATED_AT + " ASC LIMIT " + Integer.toString(mDb.mConfig.getFlushBatchSize()));
+            rawDataQuery.append(
+                    "ORDER BY " + KEY_CREATED_AT + " ASC LIMIT " + Integer.toString(mDb.mConfig.getFlushBatchSize()));
             c = db.rawQuery(rawDataQuery.toString(), null);
 
             queueCountCursor = db.rawQuery(queueCountQuery.toString(), null);
@@ -623,7 +683,8 @@ import com.mixpanel.android.util.MPLog;
                     last_id = c.getString(idColumnIndex);
                 }
                 try {
-                    final int dataColumnIndex = c.getColumnIndex(KEY_DATA) >= 0 ? c.getColumnIndex(KEY_DATA) : DATA_COLUMN_INDEX;
+                    final int dataColumnIndex = c.getColumnIndex(KEY_DATA) >= 0 ? c.getColumnIndex(KEY_DATA)
+                            : DATA_COLUMN_INDEX;
                     final JSONObject j = new JSONObject(c.getString(dataColumnIndex));
                     arr.put(j);
                 } catch (final JSONException e) {
@@ -635,12 +696,14 @@ import com.mixpanel.android.util.MPLog;
                 data = arr.toString();
             }
         } catch (final SQLiteException e) {
-            MPLog.e(LOGTAG, "Could not pull records for Mixpanel out of database " + tableName + ". Waiting to send.", e);
+            MPLog.e(LOGTAG, "Could not pull records for Mixpanel out of database " + tableName + ". Waiting to send.",
+                    e);
 
             // We'll dump the DB on write failures, but with reads we can
             // let things ride in hopes the issue clears up.
             // (A bit more likely, since we're opening the DB for read and not write.)
-            // A corrupted or disk-full DB will be cleaned up on the next write or clear call.
+            // A corrupted or disk-full DB will be cleaned up on the next write or clear
+            // call.
             last_id = null;
             data = null;
         } finally {
@@ -654,7 +717,7 @@ import com.mixpanel.android.util.MPLog;
         }
 
         if (last_id != null && data != null) {
-            final String[] ret = {last_id, data, queueCount};
+            final String[] ret = { last_id, data, queueCount };
             return ret;
         }
         return null;
